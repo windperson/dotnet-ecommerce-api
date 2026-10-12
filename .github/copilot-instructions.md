@@ -142,3 +142,30 @@ public void CreatePayment_ValidRequest_ReturnsSuccessResponse()
 2. 修改介面需同步更新所有實作
 3. 金流回調必須使用 HTTPS
 4. 使用 `CreateSandbox()` 進行金流測試
+
+## 建置與測試
+
+在 repository 根目錄執行：
+
+```bash
+dotnet restore ec-226.sln
+dotnet build ec-226.sln
+dotnet test
+```
+
+金流測試使用 xUnit + FluentAssertions，包含於 solution：
+
+```bash
+dotnet test EC226.Payment.Test
+dotnet test EC226.Payment.Test --filter "FullyQualifiedName~ECPayPaymentProviderTest.CreatePayment_ValidRequest_ReturnsSuccessResponse"
+```
+
+`EC226.MemberSiteTest/EC226.MemberSite.Api.Test.csproj` 是獨立的 .NET 8 / MSTest 專案，目前不在 `ec-226.sln` 中；需要時可直接指定該 `.csproj` 執行。Repository 沒有定義獨立的 lint 命令或 CI lint workflow；C# 格式設定以根目錄 `.editorconfig` 為準（3 個空格縮排、CRLF）。
+
+## 架構與專案慣例補充
+
+- `EC226.MemberSite.Api` 是主要 ASP.NET Core API；請求由 Controller 進入服務介面與 Service，再透過 Repository 介面與 Repository 存取 SqlSugar。Entity 與 API 的 ViewModel/DTO 位於 `EC226.MemberSite.Model`，映射設定集中在 AutoMapper profiles。
+- API 啟動時，Autofac 從輸出目錄載入 `EC226.MemberSite.Services.dll` 和 `EC226.MemberSite.Repository.dll`，並依實作介面自動註冊類別。新增服務或 Repository 時，確認介面和實作位於對應專案，且建置輸出包含這兩個 DLL。
+- 一般服務通常繼承 `BaseServices<TEntity>`，在建構子中設定 `BaseDal`；Repository 通常繼承 `BaseRepository<TEntity>`，透過 `IUnitOfWork` 取得 SqlSugar client。自訂查詢可在 Service 中透過 Unit of Work 或 Repository 的查詢方法實作。
+- 金流 Provider 由 `PaymentProviderFactory` 根據 `PaymentType` 建立；API Autofac 模組另以名稱註冊金流 Service，因此新增 Provider 時要一起更新 Provider type、Factory、設定與相應的 named service 註冊，並為 Provider 加測試。細節依 `.github/skills/payment-provider/SKILL.md`。
+- 本機設定請使用被忽略的 `appsettings.Development.json`；部署時可用 `__` 分隔的環境變數覆寫設定階層，不要提交實際連線字串或金流憑證。

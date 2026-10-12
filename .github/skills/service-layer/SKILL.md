@@ -1,3 +1,8 @@
+---
+name: service-layer
+description: 新增或管理服務層，包含服務介面、實作、Repository 與 Controller。
+---
+
 # Service Layer Skill
 
 當使用者要求新增服務或業務功能時，使用此技能。

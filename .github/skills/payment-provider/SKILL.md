@@ -1,3 +1,8 @@
+---
+name: payment-provider
+description: 新增或整合第三方金流服務時，依照專案架構建立 Provider、設定、服務與測試。
+---
+
 # Payment Provider Skill
 
 當使用者要求新增金流服務時，使用此技能。
